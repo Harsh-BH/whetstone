@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: whetstone
+      POSTGRES_PASSWORD: whetstone
+      POSTGRES_DB: whetstone
+    ports:
+      - "5432:5432"
+    volumes:
+      - whetstone_pg:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whetstone"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  whetstone_pg:

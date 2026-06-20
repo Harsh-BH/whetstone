@@ -250,7 +250,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - whetstone_pg:/var/lib/postgresql/data
+      - whetstone_pg:/var/lib/postgresql   # postgres:18+ wants the parent dir, not /data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U whetstone"]
       interval: 5s
