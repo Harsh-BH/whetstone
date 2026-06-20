@@ -1,0 +1,26 @@
+[project]
+name = "whetstone"
+version = "0.1.0"
+description = "Adaptive Codeforces trainer"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "psycopg[binary]>=3.2",
+    "alembic>=1.13",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.5", "black>=24"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.black]
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
