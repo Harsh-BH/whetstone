@@ -3,11 +3,21 @@ from ingest import normalize
 
 
 def sub(id, t, verdict, ptype, cid=1, idx="A"):
-    return CFSubmission.model_validate({
-        "id": id, "creationTimeSeconds": t, "verdict": verdict,
-        "author": {"participantType": ptype},
-        "problem": {"contestId": cid, "index": idx, "name": "p", "rating": 800, "tags": ["math"]},
-    })
+    return CFSubmission.model_validate(
+        {
+            "id": id,
+            "creationTimeSeconds": t,
+            "verdict": verdict,
+            "author": {"participantType": ptype},
+            "problem": {
+                "contestId": cid,
+                "index": idx,
+                "name": "p",
+                "rating": 800,
+                "tags": ["math"],
+            },
+        }
+    )
 
 
 def test_solved_after_wa_practice():
@@ -32,8 +42,9 @@ def test_solved_first_try_in_contest():
 
 
 def test_unsolved_only_failures():
-    eps = normalize.normalize("u", [sub(1, 1, "WRONG_ANSWER", "PRACTICE"),
-                                    sub(2, 2, "TIME_LIMIT_EXCEEDED", "PRACTICE")])
+    eps = normalize.normalize(
+        "u", [sub(1, 1, "WRONG_ANSWER", "PRACTICE"), sub(2, 2, "TIME_LIMIT_EXCEEDED", "PRACTICE")]
+    )
     e = eps[0]
     assert e.solved is False and e.solved_at is None
     assert e.n_attempts == 2 and e.solved_in_contest is False
@@ -45,17 +56,23 @@ def test_compilation_error_is_ignored():
 
 
 def test_two_problems_two_episodes():
-    eps = normalize.normalize("u", [sub(1, 1, "OK", "PRACTICE", cid=1, idx="A"),
-                                    sub(2, 2, "OK", "PRACTICE", cid=2, idx="B")])
+    eps = normalize.normalize(
+        "u",
+        [sub(1, 1, "OK", "PRACTICE", cid=1, idx="A"), sub(2, 2, "OK", "PRACTICE", cid=2, idx="B")],
+    )
     assert {e.problem_id for e in eps} == {"1A", "2B"}
 
 
 def test_problem_without_contest_id_skipped():
-    s = CFSubmission.model_validate({
-        "id": 1, "creationTimeSeconds": 1, "verdict": "OK",
-        "author": {"participantType": "PRACTICE"},
-        "problem": {"index": "A", "name": "acmsguru", "tags": []},
-    })
+    s = CFSubmission.model_validate(
+        {
+            "id": 1,
+            "creationTimeSeconds": 1,
+            "verdict": "OK",
+            "author": {"participantType": "PRACTICE"},
+            "problem": {"index": "A", "name": "acmsguru", "tags": []},
+        }
+    )
     assert normalize.normalize("u", [s]) == []
 
 

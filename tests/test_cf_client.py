@@ -10,11 +10,23 @@ def _resp(payload, status=200):
 
 def test_problemset_parsing():
     def handler(request):
-        return _resp({"status": "OK", "result": {
-            "problems": [{"contestId": 1850, "index": "A", "name": "P", "rating": 800,
-                          "tags": ["math"]}],
-            "problemStatistics": [{"contestId": 1850, "index": "A", "solvedCount": 1234}],
-        }})
+        return _resp(
+            {
+                "status": "OK",
+                "result": {
+                    "problems": [
+                        {
+                            "contestId": 1850,
+                            "index": "A",
+                            "name": "P",
+                            "rating": 800,
+                            "tags": ["math"],
+                        }
+                    ],
+                    "problemStatistics": [{"contestId": 1850, "index": "A", "solvedCount": 1234}],
+                },
+            }
+        )
 
     c = cf_client.CFClient(transport=httpx.MockTransport(handler), min_interval=0)
     problems, solved = c.problemset_problems()
@@ -24,15 +36,37 @@ def test_problemset_parsing():
 
 def test_user_status_paginates_until_short_page():
     pages = [
-        [{"id": 3, "creationTimeSeconds": 30, "verdict": "OK",
-          "author": {"participantType": "PRACTICE"},
-          "problem": {"contestId": 1, "index": "A", "name": "a", "rating": 800, "tags": []}},
-         {"id": 2, "creationTimeSeconds": 20, "verdict": "WRONG_ANSWER",
-          "author": {"participantType": "CONTESTANT"},
-          "problem": {"contestId": 1, "index": "A", "name": "a", "rating": 800, "tags": []}}],
-        [{"id": 1, "creationTimeSeconds": 10, "verdict": "OK",
-          "author": {"participantType": "CONTESTANT"},
-          "problem": {"contestId": 2, "index": "B", "name": "b", "rating": 900, "tags": ["dp"]}}],
+        [
+            {
+                "id": 3,
+                "creationTimeSeconds": 30,
+                "verdict": "OK",
+                "author": {"participantType": "PRACTICE"},
+                "problem": {"contestId": 1, "index": "A", "name": "a", "rating": 800, "tags": []},
+            },
+            {
+                "id": 2,
+                "creationTimeSeconds": 20,
+                "verdict": "WRONG_ANSWER",
+                "author": {"participantType": "CONTESTANT"},
+                "problem": {"contestId": 1, "index": "A", "name": "a", "rating": 800, "tags": []},
+            },
+        ],
+        [
+            {
+                "id": 1,
+                "creationTimeSeconds": 10,
+                "verdict": "OK",
+                "author": {"participantType": "CONTESTANT"},
+                "problem": {
+                    "contestId": 2,
+                    "index": "B",
+                    "name": "b",
+                    "rating": 900,
+                    "tags": ["dp"],
+                },
+            }
+        ],
     ]
 
     def handler(request):

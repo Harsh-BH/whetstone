@@ -5,8 +5,13 @@ import pytest
 DB = os.environ.get("DATABASE_URL", "postgresql://whetstone:whetstone@localhost:5432/whetstone")
 
 EXPECTED = {
-    "problems", "interactions", "topic_skill", "reviews",
-    "recommendations", "learned_params", "ingest_state",
+    "problems",
+    "interactions",
+    "topic_skill",
+    "reviews",
+    "recommendations",
+    "learned_params",
+    "ingest_state",
 }
 
 

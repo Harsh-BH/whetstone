@@ -1,4 +1,5 @@
 """Postgres access for ingest (psycopg3, raw SQL — no ORM, ponytail)."""
+
 from datetime import datetime, timezone
 
 import psycopg
@@ -20,6 +21,20 @@ def upsert_problems(conn: psycopg.Connection, rows: list[dict]) -> int:
             contest_id=EXCLUDED.contest_id, idx=EXCLUDED.idx, name=EXCLUDED.name,
             rating=EXCLUDED.rating, tags=EXCLUDED.tags,
             solved_count=EXCLUDED.solved_count, updated_at=now()
+    """
+    with conn.cursor() as cur:
+        cur.executemany(sql, rows)
+    return len(rows)
+
+
+def insert_problems_if_absent(conn: psycopg.Connection, rows: list[dict]) -> int:
+    """FK-safety insert for problems referenced by submissions but maybe not in the
+    catalog. ON CONFLICT DO NOTHING so it never clobbers catalog data (e.g. solved_count)."""
+    sql = """
+        INSERT INTO problems (id, contest_id, idx, name, rating, tags, solved_count, updated_at)
+        VALUES (%(id)s, %(contest_id)s, %(idx)s, %(name)s, %(rating)s, %(tags)s,
+                %(solved_count)s, now())
+        ON CONFLICT (id) DO NOTHING
     """
     with conn.cursor() as cur:
         cur.executemany(sql, rows)

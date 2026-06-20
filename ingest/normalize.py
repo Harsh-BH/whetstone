@@ -4,6 +4,7 @@ Incremental-merge correctness: CF submissions are chronological and the
 ingest cursor guarantees every NEW submission is later than every stored
 one, so merge(old, new) needs no re-fetch of history.
 """
+
 from dataclasses import dataclass
 
 from ingest.cf_client import CFSubmission
@@ -38,16 +39,18 @@ def normalize(user_id: str, submissions: list[CFSubmission]) -> list[Episode]:
         subs.sort(key=lambda s: s.creation_time)
         first = subs[0]
         solve = next((s for s in subs if s.verdict == SOLVE_VERDICT), None)
-        episodes.append(Episode(
-            user_id=user_id,
-            problem_id=pid,
-            solved=solve is not None,
-            n_attempts=len(subs),
-            first_verdict=first.verdict or "",
-            solved_in_contest=bool(solve and solve.participant_type in IN_CONTEST),
-            first_seen_at=first.creation_time,
-            solved_at=solve.creation_time if solve else None,
-        ))
+        episodes.append(
+            Episode(
+                user_id=user_id,
+                problem_id=pid,
+                solved=solve is not None,
+                n_attempts=len(subs),
+                first_verdict=first.verdict or "",
+                solved_in_contest=bool(solve and solve.participant_type in IN_CONTEST),
+                first_seen_at=first.creation_time,
+                solved_at=solve.creation_time if solve else None,
+            )
+        )
     return episodes
 
 
@@ -59,7 +62,7 @@ def merge(old: Episode | None, new: Episode) -> Episode:
         problem_id=old.problem_id,
         solved=old.solved or new.solved,
         n_attempts=old.n_attempts + new.n_attempts,
-        first_verdict=old.first_verdict,                 # earliest overall
+        first_verdict=old.first_verdict,  # earliest overall
         solved_in_contest=old.solved_in_contest if old.solved else new.solved_in_contest,
         first_seen_at=old.first_seen_at,
         solved_at=old.solved_at if old.solved else new.solved_at,

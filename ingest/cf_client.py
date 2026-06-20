@@ -1,4 +1,5 @@
 """Codeforces public API client: rate-limited, backed off, paginated (docs/06)."""
+
 import time
 
 import httpx
@@ -50,8 +51,9 @@ class CFUserInfo(BaseModel):
 
 
 class CFClient:
-    def __init__(self, transport=None, min_interval: float = 1.5, max_retries: int = 4,
-                 page_size: int = 1000) -> None:
+    def __init__(
+        self, transport=None, min_interval: float = 1.5, max_retries: int = 4, page_size: int = 1000
+    ) -> None:
         self._client = httpx.Client(base_url=BASE_URL, transport=transport, timeout=30.0)
         self._min_interval = min_interval
         self._max_retries = max_retries
@@ -82,7 +84,9 @@ class CFClient:
                     backoff *= 2
                     continue
             if resp.status_code != 200 or body.get("status") != "OK":
-                raise CFError(f"{method}: HTTP {resp.status_code} {body.get('comment', resp.text[:200])}")
+                raise CFError(
+                    f"{method}: HTTP {resp.status_code} {body.get('comment', resp.text[:200])}"
+                )
             return body["result"]
         raise CFError(f"{method}: exhausted retries")
 
@@ -99,7 +103,9 @@ class CFClient:
         out: list[CFSubmission] = []
         frm = 1
         while True:
-            page = self._get("user.status", handle=handle, **{"from": frm, "count": self._page_size})
+            page = self._get(
+                "user.status", handle=handle, **{"from": frm, "count": self._page_size}
+            )
             out.extend(CFSubmission.model_validate(s) for s in page)
             if len(page) < self._page_size:
                 break

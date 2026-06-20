@@ -30,8 +30,9 @@ def conn():
 
 
 def test_upsert_problem_is_idempotent(conn):
-    row = dict(id="9999Z", contest_id=9999, idx="Z", name="t", rating=800,
-               tags=["math"], solved_count=10)
+    row = dict(
+        id="9999Z", contest_id=9999, idx="Z", name="t", rating=800, tags=["math"], solved_count=10
+    )
     assert db.upsert_problems(conn, [row]) == 1
     row["solved_count"] = 20
     db.upsert_problems(conn, [row])
@@ -41,12 +42,31 @@ def test_upsert_problem_is_idempotent(conn):
 
 
 def test_upsert_interaction_and_get(conn):
-    db.upsert_problems(conn, [dict(id="9999Z", contest_id=9999, idx="Z", name="t",
-                                   rating=800, tags=["math"], solved_count=10)])
+    db.upsert_problems(
+        conn,
+        [
+            dict(
+                id="9999Z",
+                contest_id=9999,
+                idx="Z",
+                name="t",
+                rating=800,
+                tags=["math"],
+                solved_count=10,
+            )
+        ],
+    )
     ts = datetime(2024, 1, 1, tzinfo=timezone.utc)
-    ep = dict(user_id="_test", problem_id="9999Z", solved=True, n_attempts=2,
-              first_verdict="WRONG_ANSWER", solved_in_contest=False,
-              first_seen_at=ts, solved_at=ts)
+    ep = dict(
+        user_id="_test",
+        problem_id="9999Z",
+        solved=True,
+        n_attempts=2,
+        first_verdict="WRONG_ANSWER",
+        solved_in_contest=False,
+        first_seen_at=ts,
+        solved_at=ts,
+    )
     db.upsert_interaction(conn, ep)
     conn.commit()
     got = db.get_interaction(conn, "_test", "9999Z")
