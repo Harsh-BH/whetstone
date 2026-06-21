@@ -5,9 +5,11 @@ Outcome: P(first-attempt solve) = sigmoid((theta_eff - b) / s), theta_eff = min 
 Update: online Laplace — mu += sigma^2 * grad; 1/sigma^2 += Fisher info. sigma is
 first-class (it drives Assess vs Train in M2).
 
-Credit assignment (the docs/03 "messiest choice"): predict with theta_eff = min, but
-distribute the same error (y - p) to ALL contributing tags. Its bias (over-crediting
-strong co-tags) is an explicit docs/07 ablation, not fixed in M1.
+Credit assignment (the docs/03 "messiest choice"): predict with theta_eff = min, and
+SPLIT one observation's evidence across its n contributing tags (gradient and Fisher
+info each /n) rather than duplicating the full error to every tag — duplicating
+inflates mu and over-predicts. The split-vs-argmin-vs-softmin choice is a docs/07
+aggregation ablation.
 """
 
 import math
