@@ -53,3 +53,6 @@ FSRS_GROWTH = 2.0  # stability gain factor on a successful review (scaled by 1�
 FSRS_FORGET = 0.5  # stability multiplier on a lapse
 MASTERY_SD_MAX = 130.0  # P5: posterior must be confident (σ ≤ this) to count as mastered
 MASTERY_MIN_STABILITY = 21.0  # days: sustained-retention proxy for ≥2 spaced reviews (P5)
+
+# --- Learning-curve analysis (docs/07 A3, power law of practice). ---
+MIN_OPPORTUNITIES = 5  # min first-attempts on a skill to fit its learning curve
