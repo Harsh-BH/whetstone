@@ -35,3 +35,10 @@ FRONTIER_ONLY = True  # P6 prereq-DAG frontier
 IRT_S = 400.0 / math.log(10)  # logistic scale ~ Elo (a 400-pt gap ≈ CF win prob); fit per user
 PRIOR_MU = 1500.0  # cold-start θ prior when CF rating unknown (docs/03 cold-start)
 PRIOR_SIGMA = 350.0  # high initial per-tag uncertainty (drives Assess in M2)
+
+# --- Recommender constants (docs/04, docs/02). ---
+ASSESS_SIGMA_THRESHOLD = 120.0  # P8: σ above this routes a topic to Assess (CAT)
+FRONTIER_MARGIN = 200.0  # P6: prereq "satisfied" when μ ≥ R_band − margin (M2 proxy; M3=mastery)
+STRETCH_TARGET_P = 0.40  # docs/04: stretch problems for growth/exploration
+DAILY_BLEND = {"train": 0.8, "stretch": 0.2}  # M2 (no FSRS reviews yet); M3 -> 65/20/15
+MINUTES_PER_PROBLEM = 30.0  # rough cost to size the daily set from the H-hour budget
