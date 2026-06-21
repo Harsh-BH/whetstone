@@ -42,3 +42,14 @@ FRONTIER_MARGIN = 200.0  # P6: prereq "satisfied" when μ ≥ R_band − margin 
 STRETCH_TARGET_P = 0.40  # docs/04: stretch problems for growth/exploration
 DAILY_BLEND = {"train": 0.8, "stretch": 0.2}  # M2 (no FSRS reviews yet); M3 -> 65/20/15
 MINUTES_PER_PROBLEM = 30.0  # rough cost to size the daily set from the H-hour budget
+
+# --- Retention (FSRS) + mastery constants (docs/02 P3/P5, docs/03). ---
+FSRS_DECAY = -0.5  # power forgetting curve exponent (FSRS-5)
+# Derived so retrievability(elapsed=stability) == TARGET_RETRIEVABILITY exactly.
+FSRS_FACTOR = TARGET_RETRIEVABILITY ** (1.0 / FSRS_DECAY) - 1.0
+FSRS_INIT_STABILITY = 1.0  # days; stability after the first solve of a concept
+FSRS_INIT_DIFFICULTY = 5.0  # 1..10 prior difficulty
+FSRS_GROWTH = 2.0  # stability gain factor on a successful review (scaled by 1−R)
+FSRS_FORGET = 0.5  # stability multiplier on a lapse
+MASTERY_SD_MAX = 130.0  # P5: posterior must be confident (σ ≤ this) to count as mastered
+MASTERY_MIN_STABILITY = 21.0  # days: sustained-retention proxy for ≥2 spaced reviews (P5)
