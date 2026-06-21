@@ -12,6 +12,12 @@ migrate:
 ingest:
 	uv run python -m ingest.poller
 
+eval:
+	uv run python -m eval.run_m1
+
+train:
+	uv run python -m model.snapshot
+
 test:
 	uv run pytest -q
 
