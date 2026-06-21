@@ -1,4 +1,4 @@
-.PHONY: dbup dbdown migrate ingest test fmt lint
+.PHONY: dbup dbdown migrate ingest eval train test fmt lint
 
 dbup:
 	docker compose -f infra/docker-compose.yml up -d db

@@ -4,6 +4,7 @@ and dump radar JSON for the dashboard. This is the `make train` entry point.
 Uses the same aggregation+temperature selection as eval (on all data, no split),
 so the live model matches what the gate validated.
 """
+
 import json
 
 from eval.dataset import load_records
@@ -32,9 +33,7 @@ def save_snapshot(conn, user_id: str, model: SkillModel) -> int:
 
 
 def dump_radar(model: SkillModel, path: str) -> None:
-    data = [
-        {"tag": t, "mu": sk.mu, "sigma": sk.sigma} for t, sk in sorted(model.tags.items())
-    ]
+    data = [{"tag": t, "mu": sk.mu, "sigma": sk.sigma} for t, sk in sorted(model.tags.items())]
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
 

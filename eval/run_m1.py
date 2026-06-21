@@ -115,7 +115,12 @@ def evaluate(conn, user_id: str, cf_rating: float | None = None) -> dict:
     return evaluate_records(load_records(conn, user_id), cf_rating)
 
 
-def main(user_id: str = "SecondThread") -> None:
+def main(user_id: str = "Vish2503") -> None:
+    # Default to the representative target-band validation handle (docs/07 finite-sample
+    # note). The real user's account plugs in here once it has enough history.
+    import os
+
+    user_id = os.environ.get("EVAL_HANDLE", user_id)
     from ingest import db
     from ingest.cf_client import CFClient
 
