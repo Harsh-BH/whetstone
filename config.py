@@ -5,6 +5,8 @@ These are PRIORS — the system estimates better values from the user's data
 where it can (docs/02 "the one rule above all"). Used from M1+.
 """
 
+import math
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,3 +30,8 @@ TARGET_RETRIEVABILITY = 0.90  # P3 spacing: review trigger
 MAX_CONSECUTIVE_SAME_TAG = 1  # P4 interleaving
 MASTERY_SUSTAINED_REVIEWS = 2  # P5 mastery
 FRONTIER_ONLY = True  # P6 prereq-DAG frontier
+
+# --- IRT / knowledge-model constants (docs/03). Scale shared with CF ratings. ---
+IRT_S = 400.0 / math.log(10)  # logistic scale ~ Elo (a 400-pt gap ≈ CF win prob); fit per user
+PRIOR_MU = 1500.0  # cold-start θ prior when CF rating unknown (docs/03 cold-start)
+PRIOR_SIGMA = 350.0  # high initial per-tag uncertainty (drives Assess in M2)
