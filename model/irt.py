@@ -5,11 +5,11 @@ Outcome: P(first-attempt solve) = sigmoid((theta_eff - b) / s), theta_eff = min 
 Update: online Laplace — mu += sigma^2 * grad; 1/sigma^2 += Fisher info. sigma is
 first-class (it drives Assess vs Train in M2).
 
-Credit assignment (the docs/03 "messiest choice"): predict with theta_eff = min, and
-SPLIT one observation's evidence across its n contributing tags (gradient and Fisher
-info each /n) rather than duplicating the full error to every tag — duplicating
-inflates mu and over-predicts. The split-vs-argmin-vs-softmin choice is a docs/07
-aggregation ablation.
+Credit assignment (the docs/03 "messiest choice"): theta_eff aggregates a problem's
+tag skills via `agg` ("min" = weakest required skill gates; "mean"). One observation's
+evidence flows to each tag in proportion to d theta_eff / d mu (argmin for "min",
+1/n for "mean") — conserved, never duplicated. `agg` is selected per user on train
+log-loss; the choice is the docs/07 aggregation ablation.
 """
 
 import math
@@ -36,6 +36,7 @@ class SkillModel:
     s: float = IRT_S
     prior_mu: float = PRIOR_MU
     prior_sigma: float = PRIOR_SIGMA
+    agg: str = "min"  # tag aggregation: "min" (weakest gates) or "mean" (docs/07 ablation)
     tags: dict[str, TagSkill] = field(default_factory=dict)
 
     def _skill(self, tag: str) -> TagSkill:
@@ -45,13 +46,24 @@ class SkillModel:
             self.tags[tag] = sk
         return sk
 
+    def _aggregate(self, tags: list[str]) -> tuple[float, list[float]]:
+        """Return (theta_eff, weights) where weights[i] = d theta_eff / d mu_i.
+        Evidence on an update flows to each tag in proportion to its weight."""
+        mus = [self._skill(t).mu for t in tags]
+        if self.agg == "mean":
+            n = len(mus)
+            return sum(mus) / n, [1.0 / n] * n
+        # default "min": weakest required skill gates; gradient flows to the argmin.
+        j = min(range(len(mus)), key=lambda i: mus[i])
+        return mus[j], [1.0 if i == j else 0.0 for i in range(len(mus))]
+
     def theta_eff(self, tags: list[str]) -> float:
         if not tags:
             return self.prior_mu
-        return min(self._skill(t).mu for t in tags)
+        return self._aggregate(tags)[0]
 
     def predict_solve(self, b: float, tags: list[str]) -> tuple[float, float]:
-        theta = self.theta_eff(tags)
+        theta = self.prior_mu if not tags else self._aggregate(tags)[0]
         p = _sigmoid((theta - b) / self.s)
         info = p * (1.0 - p) / (self.s * self.s)
         return p, info
@@ -59,15 +71,15 @@ class SkillModel:
     def update(self, b: float, tags: list[str], y: int) -> None:
         if not tags:
             return
-        p, _ = self.predict_solve(b, tags)
-        # Split the evidence across contributing tags (conserve, don't duplicate):
-        # one observation is 1/n of the evidence for each of its n tags. Duplicating
-        # the full gradient over co-tags inflates mu and over-predicts (docs/03
-        # credit-assignment; docs/07 aggregation ablation).
-        n = len(tags)
+        theta, weights = self._aggregate(tags)
+        p = _sigmoid((theta - b) / self.s)
+        # Evidence flows to each tag by its aggregation weight (argmin for "min",
+        # 1/n for "mean") — conserves one observation's evidence, never duplicates.
         grad = (y - p) / self.s  # d/dtheta of the log-likelihood
         info = p * (1.0 - p) / (self.s * self.s)
-        for t in tags:
+        for t, w in zip(tags, weights):
+            if w == 0.0:
+                continue
             sk = self._skill(t)
-            sk.mu += sk.sigma * sk.sigma * grad / n
-            sk.sigma = math.sqrt(1.0 / (1.0 / (sk.sigma * sk.sigma) + info / n))
+            sk.mu += sk.sigma * sk.sigma * grad * w
+            sk.sigma = math.sqrt(1.0 / (1.0 / (sk.sigma * sk.sigma) + info * w))

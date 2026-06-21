@@ -16,8 +16,11 @@ from model.irt import SkillModel
 S_BOUNDS = (50.0, 3000.0)
 
 
-def _replay_train(recs: list[Record], s: float, prior_mu: float) -> SkillModel:
-    m = SkillModel(s=s, prior_mu=prior_mu)
+AGG_CHOICES = ("min", "mean")
+
+
+def _replay_train(recs: list[Record], s: float, prior_mu: float, agg: str = "min") -> SkillModel:
+    m = SkillModel(s=s, prior_mu=prior_mu, agg=agg)
     for r in recs:
         m.update(r.b, r.tags, r.y)
     return m
@@ -33,12 +36,12 @@ def _prequential(model: SkillModel, recs: list[Record]) -> tuple[list[int], list
     return ys, ps
 
 
-def fit_s(train: list[Record], prior_mu: float, bounds=S_BOUNDS) -> float:
+def fit_s(train: list[Record], prior_mu: float, agg: str = "min", bounds=S_BOUNDS) -> float:
     """Fit the logistic temperature by minimizing prequential train log-loss (a
     proper scoring rule -> calibration). Continuous (scipy) so s isn't grid-clamped."""
 
     def loss(s: float) -> float:
-        m = SkillModel(s=float(s), prior_mu=prior_mu)
+        m = SkillModel(s=float(s), prior_mu=prior_mu, agg=agg)
         ys, ps = _prequential(m, train)
         if len(set(ys)) < 2:
             return 1e9
@@ -46,6 +49,19 @@ def fit_s(train: list[Record], prior_mu: float, bounds=S_BOUNDS) -> float:
 
     res = minimize_scalar(loss, bounds=bounds, method="bounded")
     return float(res.x)
+
+
+def select_agg_and_s(train: list[Record], prior_mu: float) -> tuple[str, float]:
+    """Pick aggregation + temperature by TRAIN log-loss only (no test peeking)."""
+    best = None
+    for agg in AGG_CHOICES:
+        s = fit_s(train, prior_mu, agg=agg)
+        m = SkillModel(s=s, prior_mu=prior_mu, agg=agg)
+        ys, ps = _prequential(m, train)
+        ll = metrics.log_loss_(ys, ps) if len(set(ys)) >= 2 else 1e9
+        if best is None or ll < best[0]:
+            best = (ll, agg, s)
+    return best[1], best[2]
 
 
 def per_tag_baseline(train: list[Record], test: list[Record]) -> list[float]:
@@ -65,8 +81,8 @@ def per_tag_baseline(train: list[Record], test: list[Record]) -> list[float]:
 def evaluate_records(recs: list[Record], cf_rating: float | None) -> dict:
     prior_mu = float(cf_rating) if cf_rating else SkillModel().prior_mu
     train, test = temporal_split(recs)
-    s = fit_s(train, prior_mu)
-    model = _replay_train(train, s, prior_mu)
+    agg, s = select_agg_and_s(train, prior_mu)
+    model = _replay_train(train, s, prior_mu, agg=agg)
     ys, ps = _prequential(model, test)
     bl = per_tag_baseline(train, test)
     auc = metrics.auc(ys, ps)
@@ -75,6 +91,7 @@ def evaluate_records(recs: list[Record], cf_rating: float | None) -> dict:
     return {
         "n_train": len(train),
         "n_test": len(test),
+        "agg": agg,
         "s": s,
         "auc": auc,
         "accuracy": metrics.accuracy(ys, ps),
@@ -110,7 +127,7 @@ def main(user_id: str = "SecondThread") -> None:
         conn.close()
 
     print(f"\n=== M1 knowledge-model eval — user={user_id} (cf_rating={rating}) ===")
-    print(f"train/test: {res['n_train']}/{res['n_test']}   fit s={res['s']:.1f}")
+    print(f"train/test: {res['n_train']}/{res['n_test']}   agg={res['agg']}   fit s={res['s']:.1f}")
     print(f"AUC        : {res['auc']:.3f}   (per-tag baseline {res['per_tag_auc']:.3f})")
     print(f"accuracy   : {res['accuracy']:.3f}")
     print(f"log-loss   : {res['log_loss']:.3f}   Brier {res['brier']:.3f}")
