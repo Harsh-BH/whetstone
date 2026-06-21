@@ -9,6 +9,7 @@ Credit assignment (the docs/03 "messiest choice"): predict with theta_eff = min,
 distribute the same error (y - p) to ALL contributing tags. Its bias (over-crediting
 strong co-tags) is an explicit docs/07 ablation, not fixed in M1.
 """
+
 import math
 from dataclasses import dataclass, field
 
@@ -57,9 +58,14 @@ class SkillModel:
         if not tags:
             return
         p, _ = self.predict_solve(b, tags)
+        # Split the evidence across contributing tags (conserve, don't duplicate):
+        # one observation is 1/n of the evidence for each of its n tags. Duplicating
+        # the full gradient over co-tags inflates mu and over-predicts (docs/03
+        # credit-assignment; docs/07 aggregation ablation).
+        n = len(tags)
         grad = (y - p) / self.s  # d/dtheta of the log-likelihood
         info = p * (1.0 - p) / (self.s * self.s)
         for t in tags:
             sk = self._skill(t)
-            sk.mu += sk.sigma * sk.sigma * grad
-            sk.sigma = math.sqrt(1.0 / (1.0 / (sk.sigma * sk.sigma) + info))
+            sk.mu += sk.sigma * sk.sigma * grad / n
+            sk.sigma = math.sqrt(1.0 / (1.0 / (sk.sigma * sk.sigma) + info / n))
