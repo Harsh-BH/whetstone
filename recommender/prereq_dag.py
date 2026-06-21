@@ -43,13 +43,24 @@ PREREQS: dict[str, list[str]] = {
 }
 
 
-def frontier(model, all_tags: list[str], r_band: float, margin: float) -> set[str]:
-    """Tags whose every prerequisite has μ ≥ r_band − margin. Roots (no prereqs)
-    are always open. Reads μ without mutating the model (prior for unseen tags)."""
+def frontier(
+    model, all_tags: list[str], r_band: float, margin: float, mastered: set[str] | None = None
+) -> set[str]:
+    """Tags whose every prerequisite is satisfied. Roots (no prereqs) are always open.
+
+    M3: if `mastered` is given, a prereq is satisfied only when it is mastered (the real
+    P6 criterion). M2 fallback (mastered=None): the μ ≥ r_band − margin proxy. Reads μ
+    without mutating the model (prior for unseen tags)."""
 
     def mu(tag: str) -> float:
         sk = model.tags.get(tag)
         return sk.mu if sk is not None else model.prior_mu
 
     threshold = r_band - margin
-    return {t for t in all_tags if all(mu(p) >= threshold for p in PREREQS.get(t, []))}
+
+    def satisfied(prereq: str) -> bool:
+        if mastered is not None:
+            return prereq in mastered
+        return mu(prereq) >= threshold
+
+    return {t for t in all_tags if all(satisfied(p) for p in PREREQS.get(t, []))}

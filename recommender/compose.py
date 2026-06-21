@@ -71,12 +71,24 @@ def insert_recommendation(conn, user_id: str, item: dict) -> None:
     )
 
 
-def daily_set(conn, model, user_id: str, r_band: float, h_hours: float, rng) -> list[dict]:
+def daily_set(
+    conn, model, user_id: str, r_band: float, h_hours: float, rng, reviews: dict | None = None
+) -> list[dict]:
     k = daily_set_size(h_hours)
     all_tags = list(model.tags.keys())
     if not all_tags:
         return []
-    open_tags = prereq_dag.frontier(model, all_tags, r_band, FRONTIER_MARGIN)
+    # M3: with retention state, gate the frontier on real mastery and drop mastered
+    # topics from the active pool. Without it (M2), fall back to the μ-proxy frontier.
+    if reviews is not None:
+        from model import mastery
+
+        mastered = mastery.mastered_set(model, reviews, all_tags, r_band)
+        open_tags = prereq_dag.frontier(model, all_tags, r_band, FRONTIER_MARGIN, mastered=mastered)
+    else:
+        mastered = set()
+        open_tags = prereq_dag.frontier(model, all_tags, r_band, FRONTIER_MARGIN)
+    open_tags = open_tags - mastered  # active pool excludes mastered topics
     if not open_tags:
         return []
 
