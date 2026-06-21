@@ -1,8 +1,9 @@
 """M4 gate: honest L1 (IRT) vs L2 (PFA) vs L3 (DKT) next-step AUC on the SAME temporal
 split, plus the learning-curve power-law check (docs/07 A1/A3).
 
-Gate: learning curves fit the majority of active skills; the comparison table is produced
-and L2 is not worse than L1. L3 is reported either way — it needn't win at n=1 (docs/03).
+Gate (docs/08 M4): learning curves fit the majority of active skills, and the comparison
+table is produced. Whether L2/L3 beat L1 is REPORTED, not gated — at n=1 the parsimonious
+IRT often wins and that is a legitimate result (docs/03).
 """
 
 from config import settings
