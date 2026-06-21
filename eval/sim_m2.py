@@ -127,7 +127,6 @@ def run_gate(conn, user_id: str, horizon: int = 12) -> dict:
     model = fit_user(conn, user_id, rating)
     cands = load_unseen(conn, user_id)
 
-    rng = random.Random(0)
     pol = {
         "greedy": greedy_select,
         "random": random_select,
