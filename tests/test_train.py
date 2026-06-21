@@ -83,25 +83,51 @@ def test_pick_in_band_none_when_empty():
 def test_goal_weights_normalized_frequency():
     c = db.connect()
     c.execute("DELETE FROM problems WHERE id IN ('G1','G2','G3','G4')")
+    # Use tags unique to this test so the catalog-frequency count is not polluted by
+    # other tests' seeded problems sharing real tags (e.g. dp/math) in the same band.
     db.upsert_problems(
         c,
         [
             dict(
-                id="G1", contest_id=1, idx="A", name="x", rating=1900, tags=["dp"], solved_count=1
+                id="G1",
+                contest_id=1,
+                idx="A",
+                name="x",
+                rating=1900,
+                tags=["gw_alpha"],
+                solved_count=1,
             ),
             dict(
-                id="G2", contest_id=1, idx="B", name="x", rating=1850, tags=["dp"], solved_count=1
+                id="G2",
+                contest_id=1,
+                idx="B",
+                name="x",
+                rating=1850,
+                tags=["gw_alpha"],
+                solved_count=1,
             ),
             dict(
-                id="G3", contest_id=1, idx="C", name="x", rating=1950, tags=["math"], solved_count=1
+                id="G3",
+                contest_id=1,
+                idx="C",
+                name="x",
+                rating=1950,
+                tags=["gw_beta"],
+                solved_count=1,
             ),
             dict(
-                id="G4", contest_id=1, idx="D", name="x", rating=600, tags=["dp"], solved_count=1
+                id="G4",
+                contest_id=1,
+                idx="D",
+                name="x",
+                rating=600,
+                tags=["gw_alpha"],
+                solved_count=1,
             ),  # out of band
         ],
     )
     c.commit()
-    w = train.goal_weights(c, ["dp", "math"], r_band=1900, band=200)
-    # in-band: dp has 2 (G1,G2), math has 1 (G3); G4 excluded (rating 600)
-    assert abs(w["dp"] - 2 / 3) < 1e-9 and abs(w["math"] - 1 / 3) < 1e-9
+    w = train.goal_weights(c, ["gw_alpha", "gw_beta"], r_band=1900, band=200)
+    # in-band: gw_alpha has 2 (G1,G2), gw_beta has 1 (G3); G4 excluded (rating 600)
+    assert abs(w["gw_alpha"] - 2 / 3) < 1e-9 and abs(w["gw_beta"] - 1 / 3) < 1e-9
     c.close()
