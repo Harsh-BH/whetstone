@@ -1,4 +1,4 @@
-.PHONY: dbup dbdown migrate ingest eval train test fmt lint
+.PHONY: dbup dbdown migrate ingest eval train serve serve-web test fmt lint
 
 dbup:
 	docker compose -f infra/docker-compose.yml up -d db
@@ -17,6 +17,12 @@ eval:
 
 train:
 	uv run python -m model.snapshot
+
+serve:
+	uv run uvicorn api.app:app --port 8000 --reload
+
+serve-web:
+	cd web && npm run dev
 
 test:
 	uv run pytest -q
