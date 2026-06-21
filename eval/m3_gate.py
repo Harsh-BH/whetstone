@@ -4,7 +4,6 @@ model's predicted rating tracks the user's actual CF rating over ≥1 contest.
 
 from config import settings
 from eval import rating as rating_mod
-from model.irt import SkillModel
 from model.snapshot import fit_user
 from retention import scheduler
 
