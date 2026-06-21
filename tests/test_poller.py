@@ -95,6 +95,8 @@ def test_second_run_is_incremental_and_merges():
     c.close()
 
 
-def test_empty_handle_raises():
+def test_empty_handle_raises(monkeypatch):
+    # No handle anywhere (arg empty AND config empty) -> must raise.
+    monkeypatch.setattr(poller.settings, "cf_handle", "")
     with pytest.raises(ValueError):
         poller.run(handle="", client=FakeClient([]))
