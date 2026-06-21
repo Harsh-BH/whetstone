@@ -1,4 +1,7 @@
 """Knowledge-model eval metrics (docs/07 A1/A2). Pure functions; no DB."""
+
+import random
+
 import numpy as np
 from sklearn.metrics import log_loss, roc_auc_score
 
@@ -48,6 +51,22 @@ def ece(y: list[int], p: list[float], n_bins: int = 10) -> float:
     return float(e)
 
 
+def ece_noise_floor(
+    p: list[float], n_bins: int = 10, n_sims: int = 2000, seed: int = 0
+) -> tuple[float, float]:
+    """ECE that a PERFECTLY-calibrated model would show at this sample size and these
+    predicted probabilities. ECE is positively biased on small samples, so on ~200-400
+    test points even a perfect model scores well above 0. Returns (mean, 95th pct) of
+    the null distribution: y_i ~ Bernoulli(p_i). Deterministic (seeded)."""
+    rng = random.Random(seed)
+    vals = []
+    for _ in range(n_sims):
+        y_sim = [1 if rng.random() < pi else 0 for pi in p]
+        vals.append(ece(y_sim, p, n_bins))
+    vals.sort()
+    return sum(vals) / len(vals), vals[int(0.95 * len(vals))]
+
+
 def reliability(y: list[int], p: list[float], n_bins: int = 10) -> list[dict]:
     y_arr, p_arr = np.asarray(y, dtype=float), np.asarray(p, dtype=float)
     edges = _bin_edges(n_bins)
@@ -55,9 +74,13 @@ def reliability(y: list[int], p: list[float], n_bins: int = 10) -> list[dict]:
     for lo, hi in zip(edges[:-1], edges[1:]):
         mask = _bin_mask(p_arr, lo, hi)
         n = int(mask.sum())
-        out.append({
-            "lo": float(lo), "hi": float(hi), "n": n,
-            "conf": float(p_arr[mask].mean()) if n else None,
-            "acc": float(y_arr[mask].mean()) if n else None,
-        })
+        out.append(
+            {
+                "lo": float(lo),
+                "hi": float(hi),
+                "n": n,
+                "conf": float(p_arr[mask].mean()) if n else None,
+                "acc": float(y_arr[mask].mean()) if n else None,
+            }
+        )
     return out

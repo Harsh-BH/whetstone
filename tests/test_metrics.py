@@ -30,6 +30,17 @@ def test_accuracy_and_brier():
     assert abs(metrics.brier(y, p) - (0.01 + 0.01 + 0.36 + 0.04) / 4) < 1e-9
 
 
+def test_ece_noise_floor_is_deterministic_and_shrinks_with_n():
+    p_small = [0.2, 0.4, 0.5, 0.6, 0.8] * 10  # n=50
+    p_large = [0.2, 0.4, 0.5, 0.6, 0.8] * 400  # n=2000
+    mean_s, p95_s = metrics.ece_noise_floor(p_small, n_sims=300)
+    mean_l, p95_l = metrics.ece_noise_floor(p_large, n_sims=300)
+    assert mean_s > mean_l > 0  # smaller samples -> larger floor
+    assert p95_s > p95_l
+    # deterministic for a fixed seed
+    assert metrics.ece_noise_floor(p_small, n_sims=300) == (mean_s, p95_s)
+
+
 def test_reliability_bins_sum_to_n():
     y = [0, 1, 1, 0, 1]
     p = [0.2, 0.8, 0.6, 0.3, 0.9]
